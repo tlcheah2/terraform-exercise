@@ -1,13 +1,31 @@
 provider "aws" {
-  region = us-east-1
+  region = "us-east-1"
 }
 
 provider "aws" {
-  region = us-west-1
+  alias  = "us-west"
+  region = "us-west-1"
 }
 
 # Get Ubuntu AMI Id
 data "aws_ami" "ubuntu" {
+  most_recent = true
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+
+  owners = ["099720109477"] # Canonical
+}
+
+data "aws_ami" "ubuntu-us-west" {
+  provider    = aws.us-west
   most_recent = true
 
   filter {
@@ -35,7 +53,8 @@ resource "aws_instance" "web-us-east" {
 
 # Create US West EC2 Instance
 resource "aws_instance" "web-us-west" {
-  ami           = data.aws_ami.ubuntu.id
+  provider      = aws.us-west
+  ami           = data.aws_ami.ubuntu-us-west.id
   instance_type = "t3.micro"
 
   tags = {
